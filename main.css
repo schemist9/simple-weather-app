@@ -1,0 +1,38 @@
+body, html {
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+.container {
+    background-color: red;
+    height: 100%;
+    width: 100%;
+}
+
+.wrapper {
+    background: gray;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2rem 2rem;
+}
+
+.days-of-the-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1rem;
+}
+
+.day-of-the-week {
+    border: 1px solid black;
+}
+
+.temp-cont {
+    display: flex;
+    justify-content: space-between;
+}
+
+.temp-count-cont {
+    display: flex;
+    justify-content: space-between;
+}
