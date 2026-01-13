@@ -58,6 +58,37 @@ const renderDayOfTheWeek = (minTemp, maxTemp, dateISO, dayCount) => {
     maxTempElement.textContent = maxTemp;
 }
 
+const renderEveryThreeHours = data => {
+    
+    const table = document.querySelector('.current-day');
+    for (let i = 0; i < 3; i++) {
+        const row = document.createElement('tr');
+        table.append(row);
+    }
+    const rows = table.querySelectorAll('tr');
+    
+    
+       for (let j = 0; j < 7; j++) {
+        const elem = document.createElement('td');
+        elem.textContent = (new Date(data.time[j])).getHours()
+        rows[0].append(elem);
+       }
+       for (let j = 0; j < 7; j++) {
+        const elem = document.createElement('td');
+        elem.textContent = data.temperature_2m[j]
+        rows[1].append(elem);
+       }
+
+       for (let j = 0; j < 7; j++) {
+        const elem = document.createElement('td');
+        elem.textContent = data.wind_speed_10m[j]
+        rows[2].append(elem);
+       }
+
+    
+    
+}
+
 (async () => {
     const { latitude, longitude } = await getUserCoords(await getUserCity());
     const { current_weather, current_weather_units } = await getUserWeather(latitude, longitude);
@@ -68,6 +99,17 @@ const renderDayOfTheWeek = (minTemp, maxTemp, dateISO, dayCount) => {
         const date = res.daily.time[i];
         renderDayOfTheWeek(minTemp, maxTemp, date, i)
     }
+
+    const result = await getUserWeather(latitude,longitude, 'hourly=temperature_2m,wind_speed_10m');
+    const arr = result;
+    let data = arr.hourly
+    let obj = {};
+    Object.entries(data).forEach(([key, value]) => {
+        obj[key] = value.filter((_, idx) => idx % 3 === 0 && idx <= 23)
+    });
+    
+    renderEveryThreeHours(obj);
+    
     
 })();
 

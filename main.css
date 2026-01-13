@@ -74,3 +74,34 @@ box-shadow:
 .temp-count {
     padding-bottom: 0.2rem;
 }
+
+.current-day-cont {
+    margin-top: 40px;
+}
+
+.current-day {
+width: 100%;
+}
+
+.current-day tr {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid rgb(214, 214, 214);
+}
+
+.current-day tr:first-child {
+    border-top: 1px solid rgb(214, 214, 214)
+}
+
+.current-day td:first-child {
+    border-left: 1px solid rgb(214, 214, 214)
+}
+
+.current-day td {
+    padding: .4rem;
+}
+
+.current-day td {
+    border-right: 1px solid rgb(214, 214, 214)
+}
