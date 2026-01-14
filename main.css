@@ -86,7 +86,7 @@ width: 100%;
 .current-day tr {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     border-bottom: 1px solid rgb(214, 214, 214);
 }
 
@@ -103,5 +103,10 @@ width: 100%;
 }
 
 .current-day td {
-    border-right: 1px solid rgb(214, 214, 214)
+    border-right: 1px solid rgb(214, 214, 214);
+    text-align: center;
+}
+
+.current-day tr td:first-child {
+    font-size: 0.8rem;
 }

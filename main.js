@@ -58,7 +58,7 @@ const renderDayOfTheWeek = (minTemp, maxTemp, dateISO, dayCount) => {
     maxTempElement.textContent = maxTemp;
 }
 
-const renderEveryThreeHours = data => {
+const renderEveryThreeHours = (data, units) => {
     
     const table = document.querySelector('.current-day');
     for (let i = 0; i < 3; i++) {
@@ -67,21 +67,31 @@ const renderEveryThreeHours = data => {
     }
     const rows = table.querySelectorAll('tr');
     
-    
+        let elem = document.createElement('td');
+        elem.textContent = 'Hour'
+        rows[0].append(elem);
        for (let j = 0; j < 7; j++) {
         const elem = document.createElement('td');
-        elem.textContent = (new Date(data.time[j])).getHours()
+        elem.textContent = (new Date(data.time[j])).getHours() + ':00'
         rows[0].append(elem);
        }
+
+        elem = document.createElement('td');
+        elem.textContent = 'Temperature'
+        rows[1].append(elem);
+        
        for (let j = 0; j < 7; j++) {
         const elem = document.createElement('td');
-        elem.textContent = data.temperature_2m[j]
+        elem.textContent = data.temperature_2m[j] + units.temperature_2m
         rows[1].append(elem);
        }
 
+        elem = document.createElement('td');
+        elem.textContent = 'Wind'
+        rows[2].append(elem);
        for (let j = 0; j < 7; j++) {
         const elem = document.createElement('td');
-        elem.textContent = data.wind_speed_10m[j]
+        elem.textContent = data.wind_speed_10m[j] + units.wind_speed_10m
         rows[2].append(elem);
        }
 
@@ -108,8 +118,6 @@ const renderEveryThreeHours = data => {
         obj[key] = value.filter((_, idx) => idx % 3 === 0 && idx <= 23)
     });
     
-    renderEveryThreeHours(obj);
-    
-    
+    renderEveryThreeHours(obj, arr.hourly_units);
 })();
 
