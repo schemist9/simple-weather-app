@@ -29,8 +29,8 @@ const getWeeklyWeather = async (latitude, longitude) => {
     return result    
 }
 const days = document.querySelector('.days-of-the-week').children;
-const renderDayOfTheWeek = (minTemp, maxTemp, dateISO, dayCount) => {
-    const dayElem = days[dayCount];
+const renderDayOfTheWeek = (daysDOM, minTemp, maxTemp, dateISO, dayCount) => {
+    const dayElem = daysDOM[dayCount];
     const date = (new Date(dateISO));
 
     const day = date.getDate();
@@ -58,66 +58,65 @@ const renderDayOfTheWeek = (minTemp, maxTemp, dateISO, dayCount) => {
     maxTempElement.textContent = maxTemp;
 }
 
-const renderEveryThreeHours = (data, units) => {
+const renderRow = (row, rowTitle, cellText) => {
+    let elem = document.createElement('td');
+    elem.textContent = rowTitle
+    row.append(elem);
+    for (let j = 0; j < 7; j++) {
+        const elem = document.createElement('td');
+        elem.textContent = cellText[j]
+        row.append(elem);
+    }
+}
+
+const renderEveryThreeHours = (data) => {
     
     const table = document.querySelector('.current-day');
     for (let i = 0; i < 3; i++) {
         const row = document.createElement('tr');
         table.append(row);
     }
+
     const rows = table.querySelectorAll('tr');
     
-        let elem = document.createElement('td');
-        elem.textContent = 'Hour'
-        rows[0].append(elem);
-       for (let j = 0; j < 7; j++) {
-        const elem = document.createElement('td');
-        elem.textContent = (new Date(data.time[j])).getHours() + ':00'
-        rows[0].append(elem);
-       }
+    renderRow(rows[0], 'Hour', data.time)
+    renderRow(rows[1], 'Temp', data.temperature)
+    renderRow(rows[2], 'Wind', data.wind_speed_10m)
+}
 
-        elem = document.createElement('td');
-        elem.textContent = 'Temperature'
-        rows[1].append(elem);
-        
-       for (let j = 0; j < 7; j++) {
-        const elem = document.createElement('td');
-        elem.textContent = data.temperature_2m[j] + units.temperature_2m
-        rows[1].append(elem);
-       }
+const renderWeeklyWeather = (data) => {
+    for (let i = 0; i < 7; i++) {
+        const minTemp = data.daily.temperature_2m_min[i];
+        const maxTemp = data.daily.temperature_2m_max[i];
+        const date = data.daily.time[i];
+        renderDayOfTheWeek(days, minTemp, maxTemp, date, i)
+    }
+}
 
-        elem = document.createElement('td');
-        elem.textContent = 'Wind'
-        rows[2].append(elem);
-       for (let j = 0; j < 7; j++) {
-        const elem = document.createElement('td');
-        elem.textContent = data.wind_speed_10m[j] + units.wind_speed_10m
-        rows[2].append(elem);
-       }
+const transformTodayWeatherData = (data, units) => {
+    let obj = {};
+    Object.entries(data.hourly).forEach(([key, value]) => {
+        obj[key] = value.filter((_, idx) => idx % 3 === 0 && idx <= 23)
+    });
 
-    
-    
+    let transformedData = {
+        time: obj.time.map(date => (new Date(date)).getHours() + ':00'),
+        temperature: obj.temperature_2m.map(temp => temp + units.temperature_2m),
+        wind_speed_10m: obj.wind_speed_10m.map(wind => wind + units.wind_speed_10m)
+    }
+    return transformedData;
 }
 
 (async () => {
     const { latitude, longitude } = await getUserCoords(await getUserCity());
     const { current_weather, current_weather_units } = await getUserWeather(latitude, longitude);
+
     const res = await getWeeklyWeather(latitude, longitude);
-    for (let i = 0; i < 7; i++) {
-        const minTemp = res.daily.temperature_2m_min[i];
-        const maxTemp = res.daily.temperature_2m_max[i];
-        const date = res.daily.time[i];
-        renderDayOfTheWeek(minTemp, maxTemp, date, i)
-    }
+    renderWeeklyWeather(res)
 
     const result = await getUserWeather(latitude,longitude, 'hourly=temperature_2m,wind_speed_10m');
-    const arr = result;
-    let data = arr.hourly
-    let obj = {};
-    Object.entries(data).forEach(([key, value]) => {
-        obj[key] = value.filter((_, idx) => idx % 3 === 0 && idx <= 23)
-    });
+    const todayWeather = transformTodayWeatherData(result, result.hourly_units);
     
-    renderEveryThreeHours(obj, arr.hourly_units);
+    renderEveryThreeHours(todayWeather);
 })();
 
