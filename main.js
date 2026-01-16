@@ -1,16 +1,34 @@
+const handleError = errorMsg => {
+    console.error(errorMsg);
+}
+
 const getUserCity = async () => {
-    const response = await fetch('https://ipapi.co/json');
-    const data = await response.json();
-    return data.city;
+    try {
+        const response = await fetch('https://ipapi.co/json');
+        const data = await response.json();
+        return data.city;
+    } catch (error) {
+        handleError('Error message');
+        return {
+            error: 'Error message'
+        }
+    }
 }
 
 const getUserCoords = async city => {
-    const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
-    const data = await response.json();
-    const result = data.results[0];
-    return { 
-        latitude: result.latitude, 
-        longitude: result.longitude
+    try {
+        const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
+        const data = await response.json();
+        const result = data.results[0];
+        return { 
+            latitude: result.latitude, 
+            longitude: result.longitude
+        }
+    } catch (error) {
+        handleError('Error message');
+        return {
+            error: 'Error message'
+        }
     }
 }
 
@@ -19,16 +37,30 @@ const getUserWeather = async (latitude, longitude, options="current_weather=true
     if (options) {
         URL += `&${options}`
     }
-    const response = await fetch(URL)
-    const data = await response.json();
-    return data;
+    try {
+        const response = await fetch(URL)
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        handleError('Error message');
+        return {
+            error: 'Error message'
+        }
+    }
 }
 
 const getWeeklyWeather = async (latitude, longitude) => {
-    const result = await getUserWeather(latitude, longitude, 'daily=temperature_2m_min,temperature_2m_max');
-    return result    
+    try {
+        const result = await getUserWeather(latitude, longitude, 'daily=temperature_2m_min,temperature_2m_max');
+        return result    
+    } catch (error) {
+        handleError('Error message');
+        return {
+            error: 'Error message'
+        }
+    }
 }
-const days = document.querySelector('.days-of-the-week').children;
+
 const renderDayOfTheWeek = (daysDOM, minTemp, maxTemp, dateISO, dayCount) => {
     const dayElem = daysDOM[dayCount];
     const date = (new Date(dateISO));
@@ -69,9 +101,7 @@ const renderRow = (row, rowTitle, cellText) => {
     }
 }
 
-const renderEveryThreeHours = (data) => {
-    
-    const table = document.querySelector('.current-day');
+const renderEveryThreeHours = (data, table) => {
     for (let i = 0; i < 3; i++) {
         const row = document.createElement('tr');
         table.append(row);
@@ -84,12 +114,12 @@ const renderEveryThreeHours = (data) => {
     renderRow(rows[2], 'Wind', data.wind_speed_10m)
 }
 
-const renderWeeklyWeather = (data) => {
+const renderWeeklyWeather = (data, daysDOM) => {
     for (let i = 0; i < 7; i++) {
         const minTemp = data.daily.temperature_2m_min[i];
         const maxTemp = data.daily.temperature_2m_max[i];
         const date = data.daily.time[i];
-        renderDayOfTheWeek(days, minTemp, maxTemp, date, i)
+        renderDayOfTheWeek(daysDOM, minTemp, maxTemp, date, i)
     }
 }
 
@@ -108,15 +138,22 @@ const transformTodayWeatherData = (data, units) => {
 }
 
 (async () => {
-    const { latitude, longitude } = await getUserCoords(await getUserCity());
-    const { current_weather, current_weather_units } = await getUserWeather(latitude, longitude);
+    try {
+        const { latitude, longitude } = await getUserCoords(await getUserCity());
+        const { current_weather, current_weather_units } = await getUserWeather(latitude, longitude);
 
-    const res = await getWeeklyWeather(latitude, longitude);
-    renderWeeklyWeather(res)
+        const res = await getWeeklyWeather(latitude, longitude);
+        const days = document.querySelector('.days-of-the-week').children;
+        renderWeeklyWeather(res, days)
 
-    const result = await getUserWeather(latitude,longitude, 'hourly=temperature_2m,wind_speed_10m');
-    const todayWeather = transformTodayWeatherData(result, result.hourly_units);
+        const result = await getUserWeather(latitude,longitude, 'hourly=temperature_2m,wind_speed_10m');
     
-    renderEveryThreeHours(todayWeather);
+        const todayWeather = transformTodayWeatherData(result, result.hourly_units);
+        
+        const table = document.querySelector('.current-day');
+        renderEveryThreeHours(todayWeather, table);
+    } catch (error) {
+
+    }
 })();
 
