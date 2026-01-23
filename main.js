@@ -2,34 +2,32 @@ const handleError = errorMsg => {
     console.error(errorMsg);
 }
 
-const getUserCity = async () => {
-    try {
-        const response = await fetch('https://ipapi.co/json');
-        const data = await response.json();
-        return data.city;
-    } catch (error) {
-        handleError('Error message');
-        return {
-            error: 'Error message'
-        }
+const fetchWrapper = async URL => {
+    const response = await fetch(URL);
+    if (!response.ok) {
+        throw new Error(`HTTP Error Fetch ${response.status}`);
     }
+    return response.json();
+}
+
+const getUserCity = async () => {
+    const data = await fetchWrapper('https://ipapi.co/json');
+
+    if (!data.city) throw new Error('Could not determine city');
+
+    return data.city;
 }
 
 const getUserCoords = async city => {
-    try {
-        const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
-        const data = await response.json();
-        const result = data.results[0];
-        return { 
-            latitude: result.latitude, 
-            longitude: result.longitude
-        }
-    } catch (error) {
-        handleError('Error message');
-        return {
-            error: 'Error message'
-        }
+
+    const data = await fetchWrapper(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`);
+    if (!data.results?.length) throw new Error('Could not fetch user\'s coords');
+    const result = data.results[0];
+    return { 
+        latitude: result.latitude, 
+        longitude: result.longitude
     }
+
 }
 
 const getUserWeather = async (latitude, longitude, options="current_weather=true") => {
@@ -37,28 +35,16 @@ const getUserWeather = async (latitude, longitude, options="current_weather=true
     if (options) {
         URL += `&${options}`
     }
-    try {
-        const response = await fetch(URL)
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        handleError('Error message');
-        return {
-            error: 'Error message'
-        }
-    }
+    
+    const data = await fetchWrapper(URL);
+    if (!data) throw new Error('Could not get user\'s weather');
+        
+    return data;
 }
 
 const getWeeklyWeather = async (latitude, longitude) => {
-    try {
-        const result = await getUserWeather(latitude, longitude, 'daily=temperature_2m_min,temperature_2m_max');
-        return result    
-    } catch (error) {
-        handleError('Error message');
-        return {
-            error: 'Error message'
-        }
-    }
+    const result = await getUserWeather(latitude, longitude, 'daily=temperature_2m_min,temperature_2m_max');
+    return result    
 }
 
 const renderDayOfTheWeek = (daysDOM, minTemp, maxTemp, dateISO, dayCount) => {
@@ -69,8 +55,9 @@ const renderDayOfTheWeek = (daysDOM, minTemp, maxTemp, dateISO, dayCount) => {
     const dayElement = dayElem.querySelector('.day-number');    
     dayElement.textContent = day;
 
-    const weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const weekday = weekdays[date.getDay()];
+    
     const weekdayElement = dayElem.querySelector('.day')
     weekdayElement.textContent = weekday;
 
@@ -153,7 +140,7 @@ const transformTodayWeatherData = (data, units) => {
         const table = document.querySelector('.current-day');
         renderEveryThreeHours(todayWeather, table);
     } catch (error) {
-
+        handleError(`App error: ${error}`);
     }
 })();
 
