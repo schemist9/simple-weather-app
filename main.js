@@ -1,3 +1,5 @@
+let data = {};
+
 const handleError = errorMsg => {
     console.error(errorMsg);
 }
@@ -51,6 +53,8 @@ const renderDayOfTheWeek = (daysDOM, minTemp, maxTemp, dateISO, dayCount) => {
     const dayElem = daysDOM[dayCount];
     const date = (new Date(dateISO));
 
+    dayElem.setAttribute('data-day', dayCount);
+
     const day = date.getDate();
     const dayElement = dayElem.querySelector('.day-number');    
     dayElement.textContent = day;
@@ -89,6 +93,7 @@ const renderRow = (row, rowTitle, cellText) => {
 }
 
 const renderEveryThreeHours = (data, table) => {
+    table.innerHTML = '';
     for (let i = 0; i < 3; i++) {
         const row = document.createElement('tr');
         table.append(row);
@@ -110,10 +115,12 @@ const renderWeeklyWeather = (data, daysDOM) => {
     }
 }
 
-const transformTodayWeatherData = (data, units) => {
+const transformTodayWeatherData = (data, units, offsetDays) => {
+    
     let obj = {};
+    const skipHours = offsetDays * 24;
     Object.entries(data.hourly).forEach(([key, value]) => {
-        obj[key] = value.filter((_, idx) => idx % 3 === 0 && idx <= 23)
+        obj[key] = value.filter((_, idx) => idx > skipHours && idx % 3 === 0 && idx <= 23 + skipHours)
     });
 
     let transformedData = {
@@ -124,21 +131,35 @@ const transformTodayWeatherData = (data, units) => {
     return transformedData;
 }
 
+const daysContainer = document.querySelector('.days-of-the-week');
+console.log('daysContainer:', daysContainer);
+console.log('type:', daysContainer?.constructor?.name, 'isElement:', daysContainer instanceof Element);
+daysContainer.addEventListener('click', event => {
+    const elem = event.target.closest('[data-day]');
+    if (!elem) return;
+    const day = elem.dataset.day;
+    
+    const todayWeather = transformTodayWeatherData(data, data.hourly_units, day);
+    const table = document.querySelector('.current-day');
+    renderEveryThreeHours(todayWeather, table);
+
+});
+
 (async () => {
     try {
         const { latitude, longitude } = await getUserCoords(await getUserCity());
         const { current_weather, current_weather_units } = await getUserWeather(latitude, longitude);
 
         const res = await getWeeklyWeather(latitude, longitude);
-        const days = document.querySelector('.days-of-the-week').children;
+        const days = daysContainer.children;
         renderWeeklyWeather(res, days)
 
-        const result = await getUserWeather(latitude,longitude, 'hourly=temperature_2m,wind_speed_10m');
-    
-        const todayWeather = transformTodayWeatherData(result, result.hourly_units);
+        data = await getUserWeather(latitude,longitude, 'hourly=temperature_2m,wind_speed_10m');
+        const todayWeather = transformTodayWeatherData(data, data.hourly_units, 0);
         
         const table = document.querySelector('.current-day');
         renderEveryThreeHours(todayWeather, table);
+
     } catch (error) {
         handleError(`App error: ${error}`);
     }
